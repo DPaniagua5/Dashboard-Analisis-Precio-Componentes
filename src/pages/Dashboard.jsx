@@ -1,41 +1,40 @@
-import { useEffect, useState } from 'react'
-import { getLatestRams } from '../lib/api'
+import { useEffect, useState } from "react"
+import { supabase } from "../services/supabase"
+import ChartBar from "../Components/ChartBar"
 
 export default function Dashboard() {
-  const [rows, setRows] = useState([])
+  const [data, setData] = useState([])
 
   useEffect(() => {
-    getLatestRams().then(setRows)
+    const loadData = async () => {
+      const { data } = await supabase
+        .from("prices")
+        .select("store, price")
+        .eq("brand", "Kingston")
+        .eq("capacity", "16GB")
+
+      // precio más barato por tienda
+      const grouped = Object.values(
+        data.reduce((acc, item) => {
+          if (!acc[item.store] || item.price < acc[item.store].price) {
+            acc[item.store] = item
+          }
+          return acc
+        }, {})
+      )
+
+      setData(grouped)
+    }
+
+    loadData()
   }, [])
 
   return (
-    <div className="container mt-4">
-      <h3>Precios de Memoria RAM (GT)</h3>
-
-      <table className="table table-striped table-sm mt-3">
-        <thead>
-          <tr>
-            <th>Tienda</th>
-            <th>Marca</th>
-            <th>Capacidad</th>
-            <th>Frecuencia</th>
-            <th>Precio</th>
-            <th>Fecha</th>
-          </tr>
-        </thead>
-        <tbody>
-          {rows.map((r, i) => (
-            <tr key={i}>
-              <td>{r.store}</td>
-              <td>{r.marca}</td>
-              <td>{r.capacity}</td>
-              <td>{r.frequency}</td>
-              <td>Q{r.price_cash}</td>
-              <td>{r.scraped_at}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
+    <div>
+      <h4 className="mb-3">Precio más barato por tienda</h4>
+      <div className="card p-3">
+        <ChartBar data={data} />
+      </div>
     </div>
   )
 }
