@@ -119,10 +119,7 @@ export default function App() {
 
       setChartData(
         data.map(d => ({
-          date: new Date(d.scraped_at).toLocaleDateString('es-GT', { 
-            month: 'short', 
-            day: 'numeric' 
-          }),
+          date: d.scraped_at,
           price: d.price_cash
         }))
       )
