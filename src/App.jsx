@@ -142,7 +142,7 @@ export default function App() {
           <h5 className="fw-bold mb-0">
             <span style={{ color: "#38bdf8" }}>RAM</span> Tracker
           </h5>
-          <small className="text-muted d-block mt-1">Guatemala Notebook</small>
+          <small className="d-block mt-1">Guatemala Notebook</small>
         </div>
 
         <div className="mt-4">
@@ -154,7 +154,7 @@ export default function App() {
                 className={`sidebar-item ${store === s ? 'active' : ''}`}
                 onClick={() => setStore(s)}
               >
-                <span className="sidebar-item-icon">🏪</span>
+                <span className="sidebar-item-icon"></span>
                 {s}
               </div>
             ))}
@@ -181,7 +181,7 @@ export default function App() {
                     <span className="fw-semibold" style={{ fontSize: '0.85rem' }}>
                       {m.capacity}
                     </span>
-                    <small className="text-muted">{m.frequency}</small>
+                    <small>{m.frequency}</small>
                   </div>
                 </div>
               ))

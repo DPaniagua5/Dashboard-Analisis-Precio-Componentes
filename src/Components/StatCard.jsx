@@ -2,7 +2,7 @@ export default function StatCard({ title, value, icon, valueColor = "#38bdf8" })
   return (
     <div className="stat-card">
       <div className="d-flex justify-content-between align-items-start mb-2">
-        <small className="text-muted text-uppercase" style={{ fontSize: '0.7rem', letterSpacing: '0.5px' }}>
+        <small className="text-uppercase" style={{ fontSize: '1rem', letterSpacing: '0.5px' }}>
           {title}
         </small>
         {icon && <span style={{ fontSize: '1.2rem' }}>{icon}</span>}

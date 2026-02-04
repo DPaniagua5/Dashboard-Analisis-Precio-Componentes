@@ -4,7 +4,7 @@
   --bg-sidebar: #0a0e16;
   --border-soft: #1f2937;
   --text-primary: #e5e7eb;
-  --text-muted: #9ca3af;
+  --text-muted: #f1f1f1;
   --accent-primary: #38bdf8;
   --accent-secondary: #0ea5e9;
 }
@@ -135,7 +135,7 @@ html, body, #root {
 }
 
 .tooltip-label {
-  color: #9ca3af;
+  color: #ffffff;
   font-size: 0.75rem;
   margin-bottom: 0.25rem;
 }
