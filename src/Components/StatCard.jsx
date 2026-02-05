@@ -1,15 +1,45 @@
-export default function StatCard({ title, value, icon, valueColor = "#38bdf8" }) {
+export default function StatCard({ title, value, valueColor, trend }) {
+  // Verificamos de forma segura si trend tiene un número
+  const hasTrend = typeof trend === 'number';
+  
+  // Lógica de colores: 
+  // Si trend > 0 (precio subió), es MALO -> Rojo
+  // Si trend < 0 (precio bajó), es BUENO -> Verde
+  const isPositive = hasTrend && trend > 0;
+  const isNegative = hasTrend && trend < 0;
+  
+  const trendColor = isPositive ? "#ef4444" : isNegative ? "#10b981" : "#94a3b8";
+  
+  // Formateamos el texto solo si existe el valor, evitando el error .toFixed()
+  const trendText = hasTrend && trend !== 0 
+    ? `${isPositive ? '+' : ''}${trend.toFixed(0)}%` 
+    : "";
+
   return (
-    <div className="stat-card">
-      <div className="d-flex justify-content-between align-items-start mb-2">
-        <small className="text-uppercase" style={{ fontSize: '1rem', letterSpacing: '0.5px' }}>
-          {title}
-        </small>
-        {icon && <span style={{ fontSize: '1.2rem' }}>{icon}</span>}
+    <div className="stat-card p-3" style={{ 
+      background: "rgba(30, 41, 59, 0.45)", 
+      borderRadius: "12px",
+      border: "1px solid rgba(255,255,255,0.05)",
+      height: "100%"
+    }}>
+      <div className="text-white mb-2 fw-bold" style={{ fontSize: '0.70rem', letterSpacing: '0.5px', textTransform: 'uppercase' }}>
+        {title}
       </div>
-      <h3 className="mb-0 fw-bold" style={{ color: valueColor }}>
-        {value !== null && value !== undefined ? `Q${value.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}` : 'Q---'}
-      </h3>
+      <div className="d-flex align-items-baseline gap-2">
+        <h2 className="mb-0 fw-bold" style={{ color: valueColor || "#38bdf8", fontSize: '1.6rem' }}>
+          {value ? `Q${Number(value).toLocaleString()}` : "Q0.00"}
+        </h2>
+        
+        {trendText && (
+          <span style={{ 
+            color: trendColor, 
+            fontSize: '1rem', 
+            fontWeight: 'bold'
+          }}>
+            {trendText}
+          </span>
+        )}
+      </div>
     </div>
-  )
+  );
 }

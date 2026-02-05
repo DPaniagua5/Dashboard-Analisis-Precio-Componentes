@@ -9,135 +9,80 @@ export default function App() {
   const [store, setStore] = useState(null)
   const [selectedMemory, setSelectedMemory] = useState(null)
   const [chartData, setChartData] = useState([])
-  const [currentPrice, setCurrentPrice] = useState(null)
-  const [priceStats, setPriceStats] = useState({ min: null, max: null, avg: null })
+  const [currentPrice, setCurrentPrice] = useState(0)
+  // Inicializamos con 0 para evitar errores de undefined
+  const [priceStats, setPriceStats] = useState({ min: 0, max: 0, prev: 0, percentage: 0 })
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const [currentPage, setCurrentPage] = useState('tracker') // 'tracker' o 'comparison'
+  const [currentPage, setCurrentPage] = useState('tracker')
   const [memories, setMemories] = useState([])
 
-  // Cargar memorias para obtener datos del producto seleccionado
   useEffect(() => {
-    if (!store) return
-
+    if (!store) return;
     async function loadMemories() {
-      const { data, error } = await supabase
-        .from("ram_prices")
-        .select("product_name, marca, capacity, frequency")
-        .eq("store", store)
-
-      if (error) return console.error(error)
-
-      const unique = Object.values(
-        data.reduce((acc, m) => {
-          acc[m.product_name] = m
-          return acc
-        }, {})
-      )
-
-      setMemories(unique)
-    }
-
-    loadMemories()
-  }, [store])
-
-  // Precio actual
-  useEffect(() => {
-    if (!store || !selectedMemory) return
-
-    async function loadCurrentPrice() {
-      const { data } = await supabase
-        .from("ram_prices")
-        .select("price_cash")
-        .eq("store", store)
-        .eq("product_name", selectedMemory)
-        .order("scraped_at", { ascending: false })
-        .limit(1)
-
-      setCurrentPrice(data?.[0]?.price_cash ?? null)
-    }
-
-    loadCurrentPrice()
-  }, [store, selectedMemory])
-
-  // Estadísticas de precios
-  useEffect(() => {
-    if (!store || !selectedMemory) return
-
-    async function loadPriceStats() {
-      const { data, error } = await supabase
-        .from("ram_prices")
-        .select("price_cash")
-        .eq("store", store)
-        .eq("product_name", selectedMemory)
-
-      if (error) return console.error(error)
-
-      if (data.length > 0) {
-        const prices = data.map(d => d.price_cash)
-        const min = Math.min(...prices)
-        const max = Math.max(...prices)
-        const avg = prices.reduce((a, b) => a + b, 0) / prices.length
-
-        setPriceStats({ min, max, avg })
+      const { data } = await supabase.from("ram_prices").select("*").eq("store", store);
+      if (data) {
+        const unique = Object.values(data.reduce((acc, m) => {
+          acc[m.product_name] = m;
+          return acc;
+        }, {}));
+        setMemories(unique);
       }
     }
+    loadMemories();
+  }, [store]);
 
-    loadPriceStats()
-  }, [store, selectedMemory])
-
-  // Chart data
   useEffect(() => {
-    if (!store || !selectedMemory) return
+    if (!store || !selectedMemory) return;
 
-    async function loadHistory() {
+    async function fetchData() {
       const { data, error } = await supabase
         .from("ram_prices")
-        .select("scraped_at, price_cash")
+        .select("price_cash, scraped_at")
         .eq("store", store)
         .eq("product_name", selectedMemory)
-        .order("scraped_at")
+        .order("scraped_at", { ascending: false });
 
-      if (error) return console.error(error)
+      if (error) return console.error(error);
 
-      setChartData(
-        data.map(d => ({
+      if (data && data.length > 0) {
+        const prices = data.map(d => d.price_cash);
+        const hoy = data[0]?.price_cash || 0;
+        const ayer = data[1] ? data[1].price_cash : hoy;
+        
+        const diff = hoy - ayer;
+        const pct = ayer !== 0 ? (diff / ayer) * 100 : 0;
+
+        setCurrentPrice(hoy);
+        setPriceStats({
+          min: Math.min(...prices),
+          max: Math.max(...prices),
+          prev: ayer,
+          percentage: pct
+        });
+
+        setChartData([...data].reverse().map(d => ({
           date: d.scraped_at,
           price: d.price_cash
-        }))
-      )
+        })));
+      }
     }
+    fetchData();
+  }, [store, selectedMemory]);
 
-    loadHistory()
-  }, [store, selectedMemory])
-
-  const selectedMemoryData = memories.find(m => m.product_name === selectedMemory)
+  const selectedData = memories.find(m => m.product_name === selectedMemory);
 
   return (
-    <div className="d-flex" style={{ minHeight: "100vh", background: "#0b0f1a" }}>
-      
-      {/* Botón hamburguesa para móvil */}
-      <button 
-        className="hamburger-btn d-md-none"
-        onClick={() => setSidebarOpen(!sidebarOpen)}
-      >
-        ☰
-      </button>
+    <div className="d-flex" style={{ minHeight: "100vh", background: "#0b0f1a", color: "white" }}>
+      {/* Botón Móvil */}
+      <button className="btn d-md-none text-white position-fixed" style={{ top: "10px", left: "10px", zIndex: 1100 }} onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
 
-      {/* SIDEBAR */}
       {currentPage === 'tracker' && (
-        <Sidebar 
-          store={store}
-          setStore={setStore}
-          selectedMemory={selectedMemory}
-          setSelectedMemory={setSelectedMemory}
-          isOpen={sidebarOpen}
-          setIsOpen={setSidebarOpen}
-        />
+        <Sidebar store={store} setStore={setStore} selectedMemory={selectedMemory} 
+                 setSelectedMemory={setSelectedMemory} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
       )}
 
-      {/* MAIN CONTENT */}
       <main className="flex-grow-1 p-4">
-        {/* Navegación */}
+        {/* Navegación Simple */}
         <div className="mb-4">
           <div className="nav-tabs-custom">
             <button 
@@ -155,67 +100,51 @@ export default function App() {
           </div>
         </div>
 
-        {/* Contenido según la página */}
         {currentPage === 'tracker' ? (
           <div className="container-fluid">
-            {/* Header */}
             <div className="mb-4">
-              <h3 className="text-white mb-1">{selectedMemoryData?.product_name || 'Selecciona un producto'}</h3>
-              <div className="d-flex gap-2 align-items-center">
-                {selectedMemoryData && (
+              <h3 className="fw-bold">{selectedMemory || 'Selecciona un producto'}</h3>
+              <div className="d-flex gap-2 flex-wrap mt-2">
+                {selectedData && (
                   <>
-                    <span className="badge bg-primary">{selectedMemoryData.marca}</span>
-                    <span className="badge bg-secondary">{selectedMemoryData.capacity}</span>
-                    <span className="badge bg-info text-dark">{selectedMemoryData.frequency}</span>
-                    <span className="badge bg-dark">{store}</span>
+                    <span className="badge bg-primary px-3 py-2">{selectedData.marca}</span>
+                    <span className="badge bg-secondary px-3 py-2">{selectedData.capacity}</span>
+                    <span className="badge bg-info text-dark px-3 py-2">{selectedData.frequency}</span>
+                    <span className="badge bg-dark border border-secondary px-3 py-2">{store}</span>
                   </>
                 )}
               </div>
             </div>
 
-            {/* Stats Cards */}
+            {/* Fila de Tarjetas */}
             <div className="row g-3 mb-4">
               <div className="col-md-3">
                 <StatCard 
-                  title="Precio Actual" 
+                  title="PRECIO ACTUAL" 
                   value={currentPrice} 
-                  icon=""
-                  trend={null}
+                  trend={priceStats.percentage} 
                 />
               </div>
               <div className="col-md-3">
-                <StatCard 
-                  title="Precio Mínimo" 
-                  value={priceStats.min} 
-                  icon=""
-                  valueColor="#10b981"
-                />
+                <StatCard title="PRECIO MÍNIMO" value={priceStats.min} valueColor="#10b981" />
               </div>
               <div className="col-md-3">
-                <StatCard 
-                  title="Precio Máximo" 
-                  value={priceStats.max} 
-                  icon=""
-                  valueColor="#ef4444"
-                />
+                <StatCard title="PRECIO MÁXIMO" value={priceStats.max} valueColor="#ef4444" />
               </div>
               <div className="col-md-3">
-                <StatCard 
-                  title="Precio Promedio" 
-                  value={priceStats.avg ? Math.round(priceStats.avg) : null} 
-                  icon=""
-                  valueColor="#f59e0b"
-                />
+                <StatCard title="DÍA ANTERIOR" value={priceStats.prev} valueColor="#1e8af0"/>
+                
               </div>
             </div>
 
-            {/* Chart */}
-            <ChartLine data={chartData} productName={selectedMemoryData?.product_name} />
+            <div className="bg-dark p-4 rounded-4" style={{ border: "1px solid #1e293b" }}>
+              <ChartLine data={chartData} productName={selectedMemory} />
+            </div>
           </div>
         ) : (
           <PriceComparison />
         )}
       </main>
     </div>
-  )
+  );
 }
