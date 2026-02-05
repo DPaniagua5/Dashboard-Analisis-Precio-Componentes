@@ -144,13 +144,13 @@ export default function App() {
               className={`nav-tab ${currentPage === 'tracker' ? 'active' : ''}`}
               onClick={() => setCurrentPage('tracker')}
             >
-              📊 Price Tracker
+              Historial de precios
             </button>
             <button 
               className={`nav-tab ${currentPage === 'comparison' ? 'active' : ''}`}
               onClick={() => setCurrentPage('comparison')}
             >
-              🔍 Comparación de Precios
+              Comparación de Precios
             </button>
           </div>
         </div>
@@ -179,7 +179,7 @@ export default function App() {
                 <StatCard 
                   title="Precio Actual" 
                   value={currentPrice} 
-                  icon="💰"
+                  icon=""
                   trend={null}
                 />
               </div>
@@ -187,7 +187,7 @@ export default function App() {
                 <StatCard 
                   title="Precio Mínimo" 
                   value={priceStats.min} 
-                  icon="📉"
+                  icon=""
                   valueColor="#10b981"
                 />
               </div>
@@ -195,7 +195,7 @@ export default function App() {
                 <StatCard 
                   title="Precio Máximo" 
                   value={priceStats.max} 
-                  icon="📈"
+                  icon=""
                   valueColor="#ef4444"
                 />
               </div>
@@ -203,7 +203,7 @@ export default function App() {
                 <StatCard 
                   title="Precio Promedio" 
                   value={priceStats.avg ? Math.round(priceStats.avg) : null} 
-                  icon="📊"
+                  icon=""
                   valueColor="#f59e0b"
                 />
               </div>

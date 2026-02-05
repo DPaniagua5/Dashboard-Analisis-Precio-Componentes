@@ -369,3 +369,85 @@ html, body, #root {
 .chart-card {
   animation: fadeIn 0.3s ease-out;
 }
+
+
+/* ELIMINAR FONDO BLANCO Y LÍNEAS */
+.table-custom {
+  background-color: transparent !important;
+  color: var(--text-primary) !important;
+  border-collapse: separate;
+  border-spacing: 0 10px;
+}
+
+.table-custom thead th {
+  background-color: transparent;
+  border: none;
+  color: var(--text-primary);
+  text-transform: uppercase;
+  font-size: 0.75rem;
+  letter-spacing: 1px;
+}
+
+/* ESTILO DE FILAS COMO TARJETAS OSCURAS */
+.table-custom tbody tr {
+  background-color: var(--bg-card) !important;
+  transition: transform 0.2s ease;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.table-custom tbody tr td {
+  border: none !important;
+  padding: 1.25rem 1rem;
+  background-color: transparent !important;
+}
+
+.table-custom tbody tr:hover {
+  transform: scale(1.01);
+  background-color: #1e293b !important;
+}
+
+/* REDONDEAR ESQUINAS DE LAS FILAS */
+.table-custom td:first-child {
+  border-top-left-radius: 12px;
+  border-bottom-left-radius: 12px;
+}
+
+.table-custom td:last-child {
+  border-top-right-radius: 12px;
+  border-bottom-right-radius: 12px;
+}
+
+/* PRECIO EN VERDE VIBRANTE */
+.price-tag {
+  color: #10b981 !important; /* Verde esmeralda */
+  font-weight: 800;
+  font-size: 1.15rem;
+}
+
+/* AJUSTE DEL BOTÓN COMPRAR */
+.btn-buy {
+  background: #059669 !important;
+  border: none;
+  color: white !important;
+  padding: 8px 16px;
+  border-radius: 8px;
+  font-weight: 600;
+  text-decoration: none;
+  display: inline-block;
+}
+
+.btn-buy:hover {
+  background: #10b981 !important;
+  box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+/* BADGE MARCA MÁS DISCRETO */
+.badge-marca {
+  background: rgba(56, 189, 248, 0.1);
+  color: var(--accent-primary);
+  border: 1px solid rgba(56, 189, 248, 0.3);
+  padding: 4px 10px;
+  border-radius: 6px;
+  font-size: 0.7rem;
+  font-weight: bold;
+}

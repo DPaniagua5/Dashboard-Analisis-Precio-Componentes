@@ -23,7 +23,7 @@ export default function StoreHistory() {
 
   return (
     <>
-      <h4>Historial de precios – {store}</h4>
+      <h4>Historial de precios - {store}</h4>
       <div className="card p-3">
         <ChartLine data={data} />
       </div>
