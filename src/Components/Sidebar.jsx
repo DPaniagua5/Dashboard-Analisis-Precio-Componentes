@@ -94,7 +94,7 @@ export default function Sidebar({
                 className={`sidebar-item ${store === s ? 'active' : ''}`}
                 onClick={() => setStore(s)}
               >
-                <span className="sidebar-item-icon">🏪</span>
+                <span className="sidebar-item-icon"></span>
                 {s}
               </div>
             ))}

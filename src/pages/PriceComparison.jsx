@@ -5,7 +5,7 @@ import ChartBar from "../Components/ChartBar"
 export default function PriceComparison() {
   const [brands, setBrands] = useState([])
   const [capacities, setCapacities] = useState([])
-  const [selectedBrand, setSelectedBrand] = useState("")
+  const [selectedBrand, setSelectedBrand] = useState("TODAS") // Cambiado a "TODAS" por defecto
   const [selectedCapacity, setSelectedCapacity] = useState("")
   const [priceData, setPriceData] = useState([])
   const [loading, setLoading] = useState(false)
@@ -20,8 +20,8 @@ export default function PriceComparison() {
       if (error) return console.error(error)
 
       const uniqueBrands = [...new Set(data.map(d => d.marca).filter(Boolean))]
-      setBrands(uniqueBrands.sort())
-      if (uniqueBrands.length > 0) setSelectedBrand(uniqueBrands[0])
+      // Añadimos "TODAS" al inicio de la lista de marcas
+      setBrands(["TODAS", ...uniqueBrands.sort()])
     }
 
     loadBrands()
@@ -44,19 +44,31 @@ export default function PriceComparison() {
     loadCapacities()
   }, [])
 
-  // Cargar datos de precios cuando cambian marca o capacidad
+  // Cargar datos de precios
   useEffect(() => {
-    if (!selectedBrand || !selectedCapacity) return
+    if (!selectedCapacity) return
 
     async function loadPriceData() {
       setLoading(true)
       
-      const { data, error } = await supabase
+      const hoy = new Date()
+      const inicioDia = new Date(hoy.setHours(0, 0, 0, 0)).toISOString()
+      const finDia = new Date(hoy.setHours(23, 59, 59, 999)).toISOString()
+      
+      let query = supabase
         .from("ram_prices")
-        .select("store, price_cash, available, product_name")
-        .eq("marca", selectedBrand)
+        .select("store, price_cash, available, product_name, url, marca, created_at")
         .eq("capacity", selectedCapacity)
         .eq("available", true)
+        .gte("created_at", inicioDia)
+        .lte("created_at", finDia)
+
+      // Si hay una marca específica seleccionada (y no es TODAS), filtramos por ella
+      if (selectedBrand !== "TODAS") {
+        query = query.eq("marca", selectedBrand)
+      }
+
+      const { data, error } = await query
 
       if (error) {
         console.error(error)
@@ -64,23 +76,24 @@ export default function PriceComparison() {
         return
       }
 
-      // Agrupar por tienda y obtener el precio más barato disponible
+      // Agrupamos por tienda para obtener el precio más barato de esa tienda
+      // (Si es "TODAS", encontrará el más barato de cualquier marca en esa tienda)
       const grouped = Object.values(
         data.reduce((acc, item) => {
           if (!acc[item.store] || item.price_cash < acc[item.store].price) {
             acc[item.store] = {
               store: item.store,
               price: item.price_cash,
-              product: item.product_name
+              product: item.product_name,
+              marca: item.marca, // Guardamos la marca para mostrarla en la tabla
+              url: item.url
             }
           }
           return acc
         }, {})
       )
 
-      // Ordenar por precio
       grouped.sort((a, b) => a.price - b.price)
-
       setPriceData(grouped)
       setLoading(false)
     }
@@ -93,7 +106,11 @@ export default function PriceComparison() {
       {/* Header */}
       <div className="mb-4">
         <h3 className="text-white mb-2">Comparación de Precios</h3>
-        <p className="text-muted">Encuentra el mejor precio disponible por tienda</p>
+        <p className="text-muted">
+          {selectedBrand === "TODAS" 
+            ? `Mostrando los mejores precios de cualquier marca para ${selectedCapacity}` 
+            : `Mostrando precios de ${selectedBrand} para ${selectedCapacity}`}
+        </p>
       </div>
 
       {/* Filtros */}
@@ -132,58 +149,52 @@ export default function PriceComparison() {
       {/* Gráfico */}
       {loading ? (
         <div className="text-center text-white py-5">
-          <div className="spinner-border text-primary" role="status">
-            <span className="visually-hidden">Cargando...</span>
-          </div>
-          <p className="mt-3">Cargando datos...</p>
+          <div className="spinner-border text-primary" role="status"></div>
+          <p className="mt-3">Analizando precios del día...</p>
         </div>
       ) : priceData.length > 0 ? (
         <div className="chart-card">
-          <div className="d-flex justify-content-between align-items-center mb-3">
-            <h5 className="mb-0 text-white">Mejor Precio por Tienda</h5>
-            <div className="d-flex gap-2">
-              <span className="badge bg-primary">{selectedBrand}</span>
-              <span className="badge bg-secondary">{selectedCapacity}</span>
-              <span className="badge bg-success">{priceData.length} tiendas</span>
-            </div>
-          </div>
           <ChartBar data={priceData} />
         </div>
       ) : (
         <div className="chart-card text-center py-5">
-          <p className="text-muted mb-0">
-            No hay productos disponibles para {selectedBrand} - {selectedCapacity}
-          </p>
+          <p className="text-muted mb-0">No hay productos disponibles para los filtros seleccionados hoy.</p>
         </div>
       )}
 
       {/* Tabla de detalles */}
       {priceData.length > 0 && (
         <div className="chart-card mt-4">
-          <h5 className="text-white mb-3">Detalles de Precios</h5>
+          <h5 className="text-white mb-3">Detalles de Ofertas</h5>
           <div className="table-responsive">
-            <table className="table table-custom">
+            <table className="table table-custom align-middle">
               <thead>
                 <tr>
-                  <th>#</th>
                   <th>Tienda</th>
+                  {selectedBrand === "TODAS" && <th>Marca</th>}
                   <th>Producto</th>
                   <th>Precio</th>
+                  <th className="text-center">Enlace</th>
                 </tr>
               </thead>
               <tbody>
                 {priceData.map((item, index) => (
                   <tr key={item.store}>
-                    <td>
-                      {index === 0 && (
-                        <span className="badge bg-warning text-dark">🏆 Mejor</span>
-                      )}
-                      {index > 0 && <span className="text-muted">{index + 1}</span>}
+                    <td className="fw-semibold">
+                       {index === 0 && <span className="me-2">🥇</span>}
+                       {item.store}
                     </td>
-                    <td className="fw-semibold">{item.store}</td>
+                    {selectedBrand === "TODAS" && (
+                      <td><span className="badge bg-dark">{item.marca}</span></td>
+                    )}
                     <td className="text-muted small">{item.product}</td>
-                    <td className="fw-bold" style={{ color: index === 0 ? '#10b981' : '#38bdf8' }}>
-                      Q{item.price.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                    <td className="fw-bold text-success">
+                      Q{item.price.toLocaleString('es-GT', { minimumFractionDigits: 2 })}
+                    </td>
+                    <td className="text-center">
+                      <a href={item.url} target="_blank" rel="noopener noreferrer" className="btn btn-sm btn-success fw-bold">
+                        Comprar
+                      </a>
                     </td>
                   </tr>
                 ))}
