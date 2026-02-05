@@ -1,41 +1,25 @@
 import { useEffect, useState } from "react"
 import { supabase } from "./services/supabase"
+import Sidebar from "./Components/Sidebar"
 import StatCard from "./Components/StatCard"
 import ChartLine from "./Components/ChartLine"
+import PriceComparison from "./pages/PriceComparison"
 
 export default function App() {
-  const [stores, setStores] = useState([])
   const [store, setStore] = useState(null)
-  const [memories, setMemories] = useState([])
   const [selectedMemory, setSelectedMemory] = useState(null)
   const [chartData, setChartData] = useState([])
   const [currentPrice, setCurrentPrice] = useState(null)
   const [priceStats, setPriceStats] = useState({ min: null, max: null, avg: null })
-  const [loading, setLoading] = useState(true)
+  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [currentPage, setCurrentPage] = useState('tracker') // 'tracker' o 'comparison'
+  const [memories, setMemories] = useState([])
 
-  // Stores
-  useEffect(() => {
-    async function loadStores() {
-      const { data, error } = await supabase
-        .from("ram_prices")
-        .select("store")
-
-      if (error) return console.error(error)
-
-      const uniqueStores = [...new Set(data.map(d => d.store))]
-      setStores(uniqueStores)
-      setStore(uniqueStores[0])
-    }
-
-    loadStores()
-  }, [])
-
-  // Memorias
+  // Cargar memorias para obtener datos del producto seleccionado
   useEffect(() => {
     if (!store) return
 
     async function loadMemories() {
-      setLoading(true)
       const { data, error } = await supabase
         .from("ram_prices")
         .select("product_name, marca, capacity, frequency")
@@ -51,8 +35,6 @@ export default function App() {
       )
 
       setMemories(unique)
-      setSelectedMemory(unique[0]?.product_name)
-      setLoading(false)
     }
 
     loadMemories()
@@ -133,117 +115,106 @@ export default function App() {
   return (
     <div className="d-flex" style={{ minHeight: "100vh", background: "#0b0f1a" }}>
       
+      {/* Botón hamburguesa para móvil */}
+      <button 
+        className="hamburger-btn d-md-none"
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+      >
+        ☰
+      </button>
+
       {/* SIDEBAR */}
-      <aside className="sidebar">
-        <div className="sidebar-header">
-          <h5 className="fw-bold mb-0">
-            <span style={{ color: "#38bdf8" }}>RAM</span> Tracker
-          </h5>
-          <small className="d-block mt-1">Guatemala Notebook</small>
-        </div>
-
-        <div className="mt-4">
-          <h6 className="sidebar-section-title">Tiendas</h6>
-          <div className="sidebar-items">
-            {stores.map(s => (
-              <div
-                key={s}
-                className={`sidebar-item ${store === s ? 'active' : ''}`}
-                onClick={() => setStore(s)}
-              >
-                <span className="sidebar-item-icon"></span>
-                {s}
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className="mt-4">
-          <h6 className="sidebar-section-title">Memorias RAM</h6>
-          <div className="sidebar-items" style={{ maxHeight: '400px', overflowY: 'auto' }}>
-            {loading ? (
-              <div className="text-center text-muted py-3">
-                <small>Cargando...</small>
-              </div>
-            ) : (
-              memories.map(m => (
-                <div
-                  key={m.product_name}
-                  className={`sidebar-item ${
-                    selectedMemory === m.product_name ? 'active' : ''
-                  }`}
-                  onClick={() => setSelectedMemory(m.product_name)}
-                >
-                  <div className="d-flex flex-column">
-                    <span className="fw-semibold" style={{ fontSize: '0.85rem' }}>
-                      {m.capacity}
-                    </span>
-                    <small>{m.frequency}</small>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-      </aside>
+      {currentPage === 'tracker' && (
+        <Sidebar 
+          store={store}
+          setStore={setStore}
+          selectedMemory={selectedMemory}
+          setSelectedMemory={setSelectedMemory}
+          isOpen={sidebarOpen}
+          setIsOpen={setSidebarOpen}
+        />
+      )}
 
       {/* MAIN CONTENT */}
       <main className="flex-grow-1 p-4">
-        <div className="container-fluid">
-          {/* Header */}
-          <div className="mb-4">
-            <h3 className="text-white mb-1">{selectedMemoryData?.product_name || 'Selecciona un producto'}</h3>
-            <div className="d-flex gap-2 align-items-center">
-              {selectedMemoryData && (
-                <>
-                  <span className="badge bg-primary">{selectedMemoryData.marca}</span>
-                  <span className="badge bg-secondary">{selectedMemoryData.capacity}</span>
-                  <span className="badge bg-info text-dark">{selectedMemoryData.frequency}</span>
-                  <span className="badge bg-dark">{store}</span>
-                </>
-              )}
-            </div>
+        {/* Navegación */}
+        <div className="mb-4">
+          <div className="nav-tabs-custom">
+            <button 
+              className={`nav-tab ${currentPage === 'tracker' ? 'active' : ''}`}
+              onClick={() => setCurrentPage('tracker')}
+            >
+              📊 Price Tracker
+            </button>
+            <button 
+              className={`nav-tab ${currentPage === 'comparison' ? 'active' : ''}`}
+              onClick={() => setCurrentPage('comparison')}
+            >
+              🔍 Comparación de Precios
+            </button>
           </div>
-
-          {/* Stats Cards */}
-          <div className="row g-3 mb-4">
-            <div className="col-md-3">
-              <StatCard 
-                title="Precio Actual" 
-                value={currentPrice} 
-                icon="💰"
-                trend={null}
-              />
-            </div>
-            <div className="col-md-3 bg-color-primary">
-              <StatCard 
-                title="Precio Mínimo" 
-                value={priceStats.min} 
-                icon="📉"
-                valueColor="#10b981"
-              />
-            </div>
-            <div className="col-md-3">
-              <StatCard 
-                title="Precio Máximo" 
-                value={priceStats.max} 
-                icon="📈"
-                valueColor="#ef4444"
-              />
-            </div>
-            <div className="col-md-3">
-              <StatCard 
-                title="Precio Promedio" 
-                value={priceStats.avg ? Math.round(priceStats.avg) : null} 
-                icon="📊"
-                valueColor="#f59e0b"
-              />
-            </div>
-          </div>
-
-          {/* Chart */}
-          <ChartLine data={chartData} productName={selectedMemoryData?.product_name} />
         </div>
+
+        {/* Contenido según la página */}
+        {currentPage === 'tracker' ? (
+          <div className="container-fluid">
+            {/* Header */}
+            <div className="mb-4">
+              <h3 className="text-white mb-1">{selectedMemoryData?.product_name || 'Selecciona un producto'}</h3>
+              <div className="d-flex gap-2 align-items-center">
+                {selectedMemoryData && (
+                  <>
+                    <span className="badge bg-primary">{selectedMemoryData.marca}</span>
+                    <span className="badge bg-secondary">{selectedMemoryData.capacity}</span>
+                    <span className="badge bg-info text-dark">{selectedMemoryData.frequency}</span>
+                    <span className="badge bg-dark">{store}</span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            {/* Stats Cards */}
+            <div className="row g-3 mb-4">
+              <div className="col-md-3">
+                <StatCard 
+                  title="Precio Actual" 
+                  value={currentPrice} 
+                  icon="💰"
+                  trend={null}
+                />
+              </div>
+              <div className="col-md-3">
+                <StatCard 
+                  title="Precio Mínimo" 
+                  value={priceStats.min} 
+                  icon="📉"
+                  valueColor="#10b981"
+                />
+              </div>
+              <div className="col-md-3">
+                <StatCard 
+                  title="Precio Máximo" 
+                  value={priceStats.max} 
+                  icon="📈"
+                  valueColor="#ef4444"
+                />
+              </div>
+              <div className="col-md-3">
+                <StatCard 
+                  title="Precio Promedio" 
+                  value={priceStats.avg ? Math.round(priceStats.avg) : null} 
+                  icon="📊"
+                  valueColor="#f59e0b"
+                />
+              </div>
+            </div>
+
+            {/* Chart */}
+            <ChartLine data={chartData} productName={selectedMemoryData?.product_name} />
+          </div>
+        ) : (
+          <PriceComparison />
+        )}
       </main>
     </div>
   )
