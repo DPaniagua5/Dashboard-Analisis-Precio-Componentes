@@ -17,7 +17,7 @@ export default function Home({ onSelectCategory }) {
         </p>
       </div>
 
-      <div className="row g-4" style={{ maxWidth: "800px", width: "100%", padding: "0 1rem" }}>
+      <div className="row g-4" style={{ maxWidth: "900px", width: "100%", padding: "0 1rem" }}>
         {/* Botón RAM */}
         <div className="col-md-6">
           <div 
@@ -43,11 +43,12 @@ export default function Home({ onSelectCategory }) {
           >
             <div className="text-center">
               <div className="mb-3">
+                <div className="mt-4"></div>
                 <img src={`${import.meta.env.BASE_URL}RAM.png`} class="img-fluid w-50" alt="Memoria RAM" />
               </div>
               <h2 className="fw-bold mb-2">Memorias RAM</h2>
               <p className="text-white-50 mb-0">
-                Compara precios de memorias RAM DDR4.
+                Compara precios de memorias DDR4.
               </p>
             </div>
           </div>
@@ -80,7 +81,7 @@ export default function Home({ onSelectCategory }) {
               <div className="mb-3" style={{ fontSize: "4rem" }}>
                 <img src={`${import.meta.env.BASE_URL}SSD.png`} class="img-fluid w-25" alt="SSD" />
               </div>
-              <h2 className="fw-bold mb-2">Discos SSD</h2>
+              <h2 className="fw-bold mb-2">Almacenamiento SSD</h2>
               <p className="text-white-50 mb-0">
                 Encuentra los mejores precios en SSD
               </p>
