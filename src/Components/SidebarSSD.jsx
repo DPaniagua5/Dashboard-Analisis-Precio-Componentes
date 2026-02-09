@@ -38,7 +38,7 @@ export default function SidebarSSD({
       setLoading(true)
       const { data, error } = await supabase
         .from("ssd_prices")
-        .select("product_name, marca, capacity, type")
+        .select("product_name, marca, capacity, type, available")
         .eq("store", store)
 
       if (error) return console.error(error)
@@ -112,9 +112,10 @@ export default function SidebarSSD({
               ssds.map(s => (
                 <div
                   key={s.product_name}
-                  className={`sidebar-item ${
-                    selectedSSD === s.product_name ? 'active' : ''
-                  }`}
+                  className={`sidebar-item 
+                    ${selectedSSD === s.product_name ? 'active' : ''}
+                    ${s.available ? 'available' : 'not-available'}
+                  `}
                   onClick={() => setSelectedSSD(s.product_name)}
                 >
                   <div className="d-flex flex-column">

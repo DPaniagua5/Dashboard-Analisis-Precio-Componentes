@@ -38,7 +38,7 @@ export default function Sidebar({
       setLoading(true)
       const { data, error } = await supabase
         .from("ram_prices")
-        .select("product_name, marca, capacity, frequency")
+        .select("product_name, marca, capacity, frequency, available")
         .eq("store", store)
 
       if (error) return console.error(error)
@@ -112,9 +112,10 @@ export default function Sidebar({
               memories.map(m => (
                 <div
                   key={m.product_name}
-                  className={`sidebar-item ${
-                    selectedMemory === m.product_name ? 'active' : ''
-                  }`}
+                  className={`sidebar-item 
+                    ${selectedMemory === m.product_name ? 'active' : ''}
+                    ${m.available ? 'available' : 'not-available'}
+                  `}
                   onClick={() => setSelectedMemory(m.product_name)}
                 >
                   <div className="d-flex flex-column">
