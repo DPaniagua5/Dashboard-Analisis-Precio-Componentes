@@ -43,7 +43,7 @@ export default function Home({ onSelectCategory }) {
           >
             <div className="text-center">
               <div className="mb-3">
-                <img src="./pRAM.png" class="img-fluid w-50" alt="Memoria RAM" />
+                <img src={`${import.meta.env.BASE_URL}RAM.png`} class="img-fluid w-50" alt="Memoria RAM" />
               </div>
               <h2 className="fw-bold mb-2">Memorias RAM</h2>
               <p className="text-white-50 mb-0">
@@ -78,7 +78,7 @@ export default function Home({ onSelectCategory }) {
           >
             <div className="text-center">
               <div className="mb-3" style={{ fontSize: "4rem" }}>
-                <img src="/SSD.png" class="img-fluid w-25" alt="SSD" />
+                <img src={`${import.meta.env.BASE_URL}SSD.png`} class="img-fluid w-25" alt="SSD" />
               </div>
               <h2 className="fw-bold mb-2">Discos SSD</h2>
               <p className="text-white-50 mb-0">
