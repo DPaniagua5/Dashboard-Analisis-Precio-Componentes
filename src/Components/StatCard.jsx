@@ -1,16 +1,11 @@
 export default function StatCard({ title, value, valueColor, trend }) {
-  // Verificamos de forma segura si trend tiene un número
   const hasTrend = typeof trend === 'number';
   
-  // Lógica de colores: 
-  // Si trend > 0 (precio subió), es MALO -> Rojo
-  // Si trend < 0 (precio bajó), es BUENO -> Verde
   const isPositive = hasTrend && trend > 0;
   const isNegative = hasTrend && trend < 0;
   
   const trendColor = isPositive ? "#ef4444" : isNegative ? "#10b981" : "#94a3b8";
   
-  // Formateamos el texto solo si existe el valor, evitando el error .toFixed()
   const trendText = hasTrend && trend !== 0 
     ? `${isPositive ? '+' : ''}${trend.toFixed(0)}%` 
     : "";
