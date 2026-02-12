@@ -123,15 +123,15 @@ export default function AppRAM({ onBackToHome }) {
               <div className="d-flex gap-2 flex-wrap mt-2">
                 {selectedData && (
                   <>
-                    <span className="badge bg-primary px-3 py-2">{selectedData.marca}</span>
-                    <span className="badge bg-secondary px-3 py-2">{selectedData.capacity}</span>
-                    <span className="badge bg-info text-dark px-3 py-2">{selectedData.frequency}</span>
-                    <span className="badge bg-dark border border-secondary px-3 py-2">{store}</span>
+                    <span className="badge d-flex align-items-center">{selectedData.marca}</span>
+                    <span className="badge d-flex align-items-center">{selectedData.capacity}</span>
+                    <span className="badge d-flex align-items-center">{selectedData.frequency}</span>
+                    <span className="badge d-flex align-items-center">{store}</span>
                       <a
                         href={selectedData.url}
                         target="_blank"
                         rel="noopener noreferrer"
-                        className="btn btn-sm btn-outline-light"
+                        className="btn btn-sm btn-link text-white"
                         style={{
                           borderRadius: "8px",
                           padding: "0.4rem 0.8rem"
