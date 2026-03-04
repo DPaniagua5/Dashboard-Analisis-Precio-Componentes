@@ -13,25 +13,33 @@ export default function AppSSD({ onBackToHome }) {
   const [priceStats, setPriceStats] = useState({ min: 0, max: 0, prev: 0, percentage: 0 })
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [currentPage, setCurrentPage] = useState('tracker')
-  const [ssds, setSSDs] = useState([])
+  const [selectedData, setSelectedData] = useState(null)
 
+  // 🔹 Cargar datos actuales del producto
   useEffect(() => {
-    if (!store) return;
-    async function loadSSDs() {
-      const { data } = await supabase.from("ssd_prices").select("*").eq("store", store);
-      if (data) {
-        const unique = Object.values(data.reduce((acc, s) => {
-          acc[s.product_name] = s;
-          return acc;
-        }, {}));
-        setSSDs(unique);
-      }
+    if (!store || !selectedSSD) return
+
+    async function loadCurrentProduct() {
+      const { data, error } = await supabase
+        .from("ssd_prices")
+        .select("*")
+        .eq("store", store)
+        .eq("product_name", selectedSSD)
+        .order("scraped_at", { ascending: false })
+        .limit(1)
+        .single()
+
+      if (error) return console.error(error)
+
+      setSelectedData(data)
     }
-    loadSSDs();
-  }, [store]);
 
+    loadCurrentProduct()
+  }, [store, selectedSSD])
+
+  // 🔹 Historial completo para el gráfico
   useEffect(() => {
-    if (!store || !selectedSSD) return;
+    if (!store || !selectedSSD) return
 
     async function fetchData() {
       const { data, error } = await supabase
@@ -39,49 +47,51 @@ export default function AppSSD({ onBackToHome }) {
         .select("price_cash, scraped_at")
         .eq("store", store)
         .eq("product_name", selectedSSD)
-        .order("scraped_at", { ascending: false });
+        .order("scraped_at", { ascending: false })
 
-      if (error) return console.error(error);
+      if (error) return console.error(error)
 
       if (data && data.length > 0) {
-        const prices = data.map(d => d.price_cash);
-        const hoy = data[0]?.price_cash || 0;
-        const ayer = data[1] ? data[1].price_cash : hoy;
+        const prices = data.map(d => d.price_cash)
+        const hoy = data[0]?.price_cash || 0
+        const ayer = data[1]?.price_cash || hoy
         
-        const diff = hoy - ayer;
-        const pct = ayer !== 0 ? (diff / ayer) * 100 : 0;
+        const diff = hoy - ayer
+        const pct = ayer !== 0 ? (diff / ayer) * 100 : 0
 
-        setCurrentPrice(hoy);
+        setCurrentPrice(hoy)
         setPriceStats({
           min: Math.min(...prices),
           max: Math.max(...prices),
           prev: ayer,
           percentage: pct
-        });
+        })
 
         setChartData([...data].reverse().map(d => ({
           date: d.scraped_at,
           price: d.price_cash
-        })));
+        })))
       }
     }
-    fetchData();
-  }, [store, selectedSSD]);
 
-  const selectedData = ssds.find(s => s.product_name === selectedSSD);
+    fetchData()
+  }, [store, selectedSSD])
 
   return (
     <div className="d-flex" style={{ minHeight: "100vh", background: "#0b0f1a", color: "white" }}>
-      {/* Botón Móvil */}
-      <button className="btn d-md-none text-white position-fixed" style={{ top: "10px", left: "10px", zIndex: 1100 }} onClick={() => setSidebarOpen(!sidebarOpen)}>☰</button>
 
-      {currentPage === 'tracker' && (
-        <SidebarSSD store={store} setStore={setStore} selectedSSD={selectedSSD} 
-                 setSelectedSSD={setSelectedSSD} isOpen={sidebarOpen} setIsOpen={setSidebarOpen} />
-      )}
+      <SidebarSSD
+        store={store}
+        setStore={setStore}
+        selectedSSD={selectedSSD}
+        setSelectedSSD={setSelectedSSD}
+        isOpen={sidebarOpen}
+        setIsOpen={setSidebarOpen}
+      />
 
       <main className="flex-grow-1 p-4">
-        {/* Botón de volver */}
+
+        {/* Botón volver */}
         <div className="mb-3">
           <button 
             className="btn btn-sm text-white-50"
@@ -97,7 +107,7 @@ export default function AppSSD({ onBackToHome }) {
           </button>
         </div>
 
-        {/* Navegación Simple */}
+        {/* Tabs */}
         <div className="mb-4">
           <div className="nav-tabs-custom">
             <button 
@@ -116,35 +126,32 @@ export default function AppSSD({ onBackToHome }) {
         </div>
 
         {currentPage === 'tracker' ? (
-          <div className="container-fluid">
+          <>
+            {/* Título producto */}
             <div className="mb-4">
-              <h3 className="fw-bold">{selectedSSD || 'Selecciona un producto'}</h3>
-              <div className="d-flex gap-2 flex-wrap mt-2">
-                {selectedData && (
-                  <>
-                    <span className="badge d-flex align-items-center">{selectedData.marca}</span>
-                    <span className="badge d-flex align-items-center">{selectedData.capacity}</span>
-                    <span className="badge d-flex align-items-center">{selectedData.type}</span>
-                    <span className="badge d-flex align-items-center">{store}</span>
-                    <a
-                        href={selectedData.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="btn btn-sm btn-link text-white"
-                        style={{
-                          borderRadius: "8px",
-                          padding: "0.4rem 0.8rem"
-                        }}
-                      >
-                        Ver producto
-                      </a>
-                  
-                  </>
-                )}
-              </div>
+              <h2 className="fw-bold">
+                {selectedSSD || 'Selecciona un producto'}
+              </h2>
+
+              {selectedData && (
+                <div className="d-flex gap-3 flex-wrap mt-2">
+                  <span>{selectedData.marca}</span>
+                  <span>{selectedData.capacity}</span>
+                  <span>{selectedData.type}</span>
+                  <span>{store}</span>
+                  <a
+                    href={selectedData.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-white"
+                  >
+                    Ver producto
+                  </a>
+                </div>
+              )}
             </div>
 
-            {/* Fila de Tarjetas */}
+            {/* Cards */}
             <div className="row g-3 mb-4">
               <div className="col-md-3">
                 <StatCard 
@@ -164,14 +171,29 @@ export default function AppSSD({ onBackToHome }) {
               </div>
             </div>
 
-            <div className="bg-dark p-4 rounded-4" style={{ border: "1px solid #1e293b" }}>
+            {/* Contenedor del gráfico RESTAURADO */}
+            <div 
+              className="p-4 rounded-4"
+              style={{ 
+                background: "linear-gradient(145deg, #111827, #0f172a)",
+                border: "1px solid #1e293b"
+              }}
+            >
+              <div className="d-flex justify-content-between align-items-center mb-3">
+                <h5 className="fw-semibold mb-0">Histórico de Precios</h5>
+                <span className="badge bg-secondary">
+                  {chartData.length} registros
+                </span>
+              </div>
+
               <ChartLine data={chartData} productName={selectedSSD} />
             </div>
-          </div>
+          </>
         ) : (
           <PriceComparisonSSD />
         )}
+
       </main>
     </div>
-  );
+  )
 }

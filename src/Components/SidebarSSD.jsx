@@ -13,54 +13,66 @@ export default function SidebarSSD({
   const [ssds, setSSDs] = useState([])
   const [loading, setLoading] = useState(true)
 
-  // Cargar tiendas
+  // 🔹 Cargar tiendas (usando función SQL)
   useEffect(() => {
     async function loadStores() {
       const { data, error } = await supabase
-        .from("ssd_prices")
-        .select("store")
+        .rpc("get_unique_stores")
 
       if (error) return console.error(error)
 
-      const uniqueStores = [...new Set(data.map(d => d.store))]
-      setStores(uniqueStores)
-      if (!store) setStore(uniqueStores[0])
+      const storeList = data.map(d => d.store)
+      setStores(storeList)
+
+      if (!store && storeList.length > 0) {
+        setStore(storeList[0])
+      }
     }
 
     loadStores()
   }, [])
+useEffect(() => {
+  if (!store) return
 
-  // Cargar SSDs
-  useEffect(() => {
-    if (!store) return
+  async function loadSSDs() {
+    setLoading(true)
 
-    async function loadSSDs() {
-      setLoading(true)
-      const { data, error } = await supabase
-        .from("ssd_prices")
-        .select("product_name, marca, capacity, type, available")
-        .eq("store", store)
+    const { data, error } = await supabase
+      .from("ssd_prices")
+      .select("product_name, marca, capacity, type, available")
+      .eq("store", store)
+      .order("product_name", { ascending: true })
 
-      if (error) return console.error(error)
-
-      const unique = Object.values(
-        data.reduce((acc, m) => {
-          acc[m.product_name] = m
-          return acc
-        }, {})
-      )
-
-      setSSDs(unique)
-      if (!selectedSSD) setSelectedSSD(unique[0]?.product_name)
+    if (error) {
+      console.error(error)
       setLoading(false)
+      return
     }
 
-    loadSSDs()
-  }, [store])
+    const uniqueMap = new Map()
+
+    data.forEach(item => {
+      if (!uniqueMap.has(item.product_name)) {
+        uniqueMap.set(item.product_name, item)
+      }
+    })
+
+    const uniqueSSDs = Array.from(uniqueMap.values())
+
+    setSSDs(uniqueSSDs)
+
+    if (!selectedSSD && uniqueSSDs.length > 0) {
+      setSelectedSSD(uniqueSSDs[0].product_name)
+    }
+
+    setLoading(false)
+  }
+
+  loadSSDs()
+}, [store])
 
   return (
     <>
-      {/* Overlay para móvil */}
       {isOpen && (
         <div 
           className="sidebar-overlay"
@@ -68,7 +80,6 @@ export default function SidebarSSD({
         />
       )}
 
-      {/* Sidebar */}
       <aside className={`sidebar ${isOpen ? 'open' : ''}`}>
         <div className="sidebar-header">
           <h5 className="fw-bold mb-0">
@@ -76,7 +87,6 @@ export default function SidebarSSD({
           </h5>
           <small className="d-block mt-1">Guatemala Notebook</small>
           
-          {/* Botón cerrar en móvil */}
           <button 
             className="sidebar-close-btn d-md-none"
             onClick={() => setIsOpen(false)}
@@ -85,6 +95,7 @@ export default function SidebarSSD({
           </button>
         </div>
 
+        {/* TIENDAS */}
         <div className="mt-4">
           <h6 className="sidebar-section-title">Tiendas</h6>
           <div className="sidebar-items">
@@ -94,13 +105,13 @@ export default function SidebarSSD({
                 className={`sidebar-item ${store === s ? 'active' : ''}`}
                 onClick={() => setStore(s)}
               >
-                <span className="sidebar-item-icon"></span>
                 {s}
               </div>
             ))}
           </div>
         </div>
 
+        {/* SSDs */}
         <div className="mt-4">
           <h6 className="sidebar-section-title">Discos SSD</h6>
           <div className="sidebar-items" style={{ maxHeight: '400px', overflowY: 'auto' }}>
